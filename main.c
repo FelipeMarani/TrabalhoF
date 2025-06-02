@@ -7,156 +7,173 @@
 
 typedef struct no // Definição da estrutura de um nó
 {
-    int *chv;        // Chave do nó
-    int v;           // Valor do nó
-    struct no **fh;  // Ponteiro para os filhos do nó
-    int n;           // Número de filhos
-    bool f;          // Flag para indicar se o nó é folha
-    struct no *prox; // Ponteiro para o próximo nó
+    int *chave;        // Chave do nó
+    struct no **filho; // Ponteiro para os filhos do nó
+    int n;             // Número de filhos
+    bool folha;        // Flag para indicar se o nó é folha
+    struct no *prox;   // Ponteiro para o próximo nó
 } no;
 
 typedef struct arvore // Definição da estrutura da árvore B+
 {
+    int t;  // Grau minimo da árvore
     no *rz; // Ponteiro para a raiz da árvore
     int n;  // Número de nós na árvore
 } arv;
 
-no *createNo(int v, bool f) // função para criar um novo nó
-{
-    no *newNo = (no *)malloc(sizeof(no)); // Aloca memória para o novo nó
+no *createNo(int t, bool f)
+{                                   // função para a criação de um novo nó
+    no *newNo = malloc(sizeof(no)); // Aloca memória para o novo nó
     if (newNo == NULL)
     {
         printf("Erro ao alocar memória para o nó.\n");
         exit(1); // Finaliza o programa se não conseguir alocar memória
     }
-    newNo->v = v;                                          // Atribui o valor ao nó
-    newNo->f = f;                                          // Define se o nó é folha
-    newNo->chv = (int *)malloc((2 * v - 1) * sizeof(int)); // Aloca memória para as chaves do nó
-    if (newNo->chv == NULL)
+    newNo->folha = f;                                 // Define se o nó é folha ou não
+    newNo->chave = malloc((2 * t - 1) * sizeof(int)); // Aloca memória para as chaves do nó
+    if (newNo->chave == NULL)
     {
         printf("Erro ao alocar memória para as chaves do nó.\n");
-        exit(1); // Finaliza o programa se não conseguir alocar memória
+        exit(1); // Finaliza o programa se não conseguir alocar memória para as chaves
     }
-    newNo->fh = (no **)malloc((2 * v) * sizeof(no *)); // Aloca memória para os filhos do nó
-    if (newNo->fh == NULL)
+    newNo->filho = malloc((2 * t + 1) * sizeof(no *)); // Aloca memória para os filhos do nó
+    if (newNo->filho == NULL)
     {
         printf("Erro ao alocar memória para os filhos do nó.\n");
-        exit(1); // Finaliza o programa se não conseguir alocar memória
+        exit(1); // Finaliza o programa se não conseguir alocar memória para os filhos
     }
-    newNo->n = 0;       // Inicializa o número de filhos com 0
-    newNo->prox = NULL; // Inicializa o ponteiro para o próximo nó como NULL
+    newNo->prox = NULL; // Inicializa o ponteiro para o proximo nó como NULL
     return newNo;       // Retorna o novo nó criado
 }
 
-arv *createArvore(int n) // função para criar uma nova árvore B+
+arv *createArvore(int g) // Função para criar uma nova árvore B+
 {
     arv *newArv = (arv *)malloc(sizeof(arv)); // Aloca memória para a nova árvore
     if (newArv == NULL)
     {
         printf("Erro ao alocar memória para a árvore.\n");
-        exit(1); // Finaliza o programa caso não consiga alocar memória
+        exit(1); // Finaliza o programa se não conseguir alocar memória
     }
-    newArv->n = n;                  // Atribui o número de nós à árvore
-    newArv->rz = createNo(n, true); // Cria a raiz da árvore como um nó folha
+    newArv->t = g;                  // Define o grau mínimo da árvore
+    newArv->n = 1;                  // inicializa o numero de nós como 1
+    newArv->rz = createNo(g, true); // Cria a raiz da árvore como um nó folha
     if (newArv->rz == NULL)
     {
         printf("Erro ao criar a raiz da árvore.\n");
-        exit(1); // Finaliza o programa caso não consiga criar a raiz
+        exit(1); // Finaliza o programa se não conseguir criar a raiz
     }
-    return newArv; // retorna a nova árvore criada
+    return newArv; // Retorna a nova árvore criada
 }
 
-void dvFilhos(no *pai, int i, no *filho) // Função para dividir os filhos de um nó
-{
-    int n = filho->n;                  // Obtém o número de filhos do nó filho
-    no *newFh = createNo(n, filho->f); // Cria um novo nó para os filhos
-    if (newFh == NULL)
+void divFilho(arv *A, no *pai, int idx, no *folha)
+{                                // Função para dividir a folha
+    int t = A->t;                // Obtém o grau mínimo da árvore
+    no *new = createNo(t, true); // Cria um novo nó para a divisão
+    for (int j = 0; j < t; j++)
     {
-        printf("Erro ao criar novo nó para os filhos.\n");
-        exit(1); // Finaliza o programa caso não consiga criar o novo nó
+        new->chave[j] = folha->chave[j + t]; // Copia as chaves da folha para o novo nó
     }
-    newFh->n = n - 1; // Define o número de filhos do novo nó
-    for (int i = 0; i < n; i++)
+    folha->n = t;            // Atualiza o número de chaves na folha
+    new->n = t;              // Atualiza o número de chaves no novo nó
+    new->prox = folha->prox; // Atualiza o ponteiro para o pŕoximo nó
+    folha->prox = new;       // Atualiza o ponteiro da folha para o novo nó
+    int sep = new->chave[0]; // Obtém a chave de separação
+    for (int j = pai->n; j > idx; j--)
     {
-        newFh->chv[i] = filho->chv[i + 1]; // copia as chaves do nó filho para o novo nó
+        pai->filho[j + 1] = pai->filho[j]; // Move os filhos para a direita
+        pai->chave[j] = pai->chave[j - 1]; // Move as chaves para a direita
     }
-    if (!filho->f) // se o nó filho não for folha
-    {
-        for (int i = 0; i < n; i++)
-        {
-            newFh->fh[i] = filho->fh[i + n]; // copia os filhos do nó para o novo nó
-        }
-    }
-
-    filho->n = n - 1; // Atualiza o número de filhos do nó filho
-
-    for (int i = pai->n - 1; n >= i; i--)
-    {
-        pai->fh[i + 1] = pai->fh[i]; // Move as chaves do pai para a direita
-    }
-
-    pai->fh[i + 1] = newFh; // Insere o novo nó de filhos no pai
-
-    for (int i = pai->n - 1; n >= i; i--)
-    {
-        pai->chv[i + 1] = pai->chv[i]; // Move as chaves do pai para a direita
-    }
-
-    pai->chv[i] = filho->chv[n - 1]; // Insere a chave do nó filho no pai
-    pai->n++;                        // Incrementa o número de filhos do pai
+    pai->filho[idx + 1] = new; // Define o novo nó como filho do pai
+    pai->chave[idx] = sep;     // Define a chave de separação no pai
+    pai->n++;                  // Incrementa o número de chaves no pai
 }
 
-void insereNotFull(no *no, int chv)
+void divInterna(arv *A, no *pai, int idx, no *intr) // Função para realizar a divisão interna
 {
-    int i = no->n - 1; // Obtém o índice do último filho
-    if (no->f)         // se o nó for folha
+    int t = A->t;                 // Obtém o grau mínimo da árvore
+    no *new = createNo(t, false); // Cria um novo nó interno
+    for (int j = 0; j < t - 1; j++)
     {
-        while (i >= 0 && chv < no->chv) // Enquanto o índice for maior ou igual a 0 e a chave for menor que a  chave do nó
+        new->chave[j] = intr->chave[j + t]; // Copia as chaves do nó interno para o novo nó
+    }
+    for (int j = 0; j < t; j++)
+    {
+        new->filho[j] = intr->filho[j + t]; // Copia os filhos do nó interno para o novo nó
+    }
+    int sep = intr->chave[t - 1]; // Obtém a chave de separação
+    intr->n = t - 1;              // Atualiza o numero de chaves no nó interno
+    new->n = t - 1;               // Atualiza o número de chaves no novo nó
+    for (int j = pai->n; j > idx; j--)
+    {
+        pai->filho[j + 1] = pai->filho[j]; // Move os filhos para a direita
+        pai->chave[j] = pai->chave[j - 1]; // Move as chaves para a direita
+    }
+    pai->filho[idx + 1] = new; // Define o novo nó como filho do pai
+    pai->chave[idx] = sep;     // Define a chave de separação no pai
+    pai->n++;                  // Incrementa o número de chaves no pai
+}
+
+void insereNotFull(arv *A, no *r, int k) // Função para inserir um elemento em um nó não cheio
+{
+    int i = r->n - 1; // Obtém o número de chaves no nó
+    if (r->folha)     // Verifica se o nó é uma folha
+    {
+        while (i >= 0 && r->chave[i] > k) // Percorre as chaves do nó
         {
-            no->chv[i + 1] = no->chv[i]; // Move as chaves para a direita
-            i--;                         // Decrementa o índice
+            r->chave[i + 1] = r->chave[i]; // Move as chave para a direita
+            i--;                           // Decrementa o índice
         }
-        no->chv[i + 1] = chv; // Insere a nova chave na posição correta
-        no->n++;              // Incrementa o número de chaves no nó
+        r->chave[i + 1] = k; // Insere a nova chave na posição correta
+        r->n++;              // Incrementa o número de chaves no nó
     }
     else
     {
-        while (i >= 0 && no->chv[i] > chv) // Enqaunto o índice for maior ou igual a 0 e a chave for maior que a chave do nó
+        while (i >= 0 && r->chave[i] > k) // Percorre as chaves do nó
         {
             i--; // Decrementa o índice
         }
-        i++;                               // Incrementa o índice para a posição correta
-        if (no->fh[i]->n == 2 * no->v - 1) // Se o filho estiver cheio
+        i++; // Incrementa o índice para a posição correta
+        if (r->filho[i]->n == 2 * A->t)
         {
-            dvFilhos(no, i, no->fh[i]); // Divide os
-            if (no->chv[i] < chv)       // Se a chave for menor que a chave do nó
+            if (r->filho[i]->folha) // Verifica se o filho é uma folha
             {
-                i++; // Incrementa o índice
+                divFilho(A, r, i, r->filho[i]); // Divide a folha
+            }
+            else
+            {
+                divInterna(A, r, i, r->filho[i]); // Divide o nó interno
+            }
+            if (r->chave[i] < k) // Verifica se a nova chave é maior que a chave de separação
+            {
+                i++; // Incrementa o indice para a posição correta
             }
         }
-        insereNotFull(no->fh[i], chv); // Insere a chave no filho
+        insereNotFull(A, r->filho[i], k); // Chama a função de forma recursiva para inserir a chave no filho correto
     }
 }
 
-void insereArvore(arv *arv, int chv)
+void insereArvore(arv *A, int k) // Função para inserir um elemento na árvore B+
 {
-    no *rz = arv->rz;            // Obtém a raiz da árvore
-    if (rz->n == 2 * arv->n - 1) // Se a raiz estiver cheia
+    no *r = A->rz;        // Obtém a raiz da árvore
+    if (r->n == 2 * A->t) // Verifica se a raiz está cheia
     {
-        no *newRz = createNo(arv->n, false); // Cria um novo nó raiz
-        if (newRz == NULL)
+        no *new = createNo(A->t, false); // Cria um novo nó interno
+        A->rz = new;                     // Define o novo nó como a nova raiz
+        new->filho[0] = r;               // Define a antiga raiz como o primeiro filho do novo nó
+        if (r->folha)                    // Verifica se a antiga raiz é uma folha
         {
-            printf("Erro ao criar nova raiz.\n");
-            exit(1); // Finaliza o programa caso não consiga criar a nova raiz
+            divFilho(A, new, 0, r); // Divide a folha
         }
-        newRz->fh[0] = rz;        // Define o filho da nova raiz como a antiga raiz
-        dvFilhos(newRz, 0, rz);   // Divide os filhos da nova raiz
-        insereArvore(newRz, chv); // Insere a chave na nova raiz
-        arv->rz = newRz;          // Atualiza a raiz da árvore
+        else
+        {
+            divInterna(A, new, 0, r); // Divide o nó interno
+        }
+        A->n++; // incrementa o número de nós na árvore
+        insereNotFull(A, new, k); // Insere a nova chave no novo nó
     }
     else
     {
-        insereNotFull(rz, chv); // Insere a chave na raiz se ela não estiver cheia
+        insereNotFull(A, r, k); // Insere a nova chave na raiz
     }
 }
 
