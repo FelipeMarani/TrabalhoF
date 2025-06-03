@@ -192,4 +192,19 @@ int main()
     {
         printf("Arquivo aberto com sucesso. \n");
     }
+
+    while ((ch = fgetc(fp)) != EOF) // Le os caracteres do arquivo até o final
+    {
+        if (ch >= '0' && ch <= '9') // Verifica se o caractere é um digito
+        {
+            num = num * 10 + (ch - '0'); // Converte o caractere para inteiro
+        }
+        else if (ch == ';'){
+            insereArvore(createArvore(degree), num); // Insere o número na árvore B+
+            num = 0; // Reseta o número para o próximo dígito
+        }
+    }
+    fclose(fp); // Fecha o arquivo
+    printf("Dados inseridos na árvore B+ com sucesso.\n");
+    
 }
