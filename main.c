@@ -168,13 +168,61 @@ void insereArvore(arv *A, int k) // Função para inserir um elemento na árvore
         {
             divInterna(A, new, 0, r); // Divide o nó interno
         }
-        A->n++; // incrementa o número de nós na árvore
+        A->n++;                   // incrementa o número de nós na árvore
         insereNotFull(A, new, k); // Insere a nova chave no novo nó
     }
     else
     {
         insereNotFull(A, r, k); // Insere a nova chave na raiz
     }
+}
+
+void printArvore(no *r, int nl) // Função para imprimir a árvore B+
+{
+    if (r == NULL)
+    {
+        return; // Retorna se o nó for nulo
+    }
+    for (int i = 0; i < nl; i++)
+    {
+        printf("  "); // Imprime espaços para a indentação
+    }
+    printf("|"); // Imprime o separador de nível
+    for (int i = 0; i < r -> n; i++)
+    {
+        
+    }
+    
+    
+    
+}
+
+void freeNo(no *r, bool f) // Função para liberar a memória de um nó
+{
+    if (r == NULL) // Verifica se o nó é nulo
+    {
+        return; // Retorna se o nó for nulo
+    }
+    if (!r->folha) // Verifica se o nó não é uma folha
+    {
+        for (int i = 0; i <= r->n; i++)
+        {
+            freeNo(r->filho[i], r->filho[i]->folha); // Chama a função recursivamente para liberar os filhos
+        }
+    }
+    free(r->chave); // Libera a memória das chaves do nó
+    free(r->filho); // Libera a memória dos filhos do nó
+    free(r);        // Libera a memória do nó
+}
+
+void freeArvore(arv *r) // Função para liberar a memória da árvore B+
+{
+    if (r == NULL) // Verifica se o nó é nulo
+    {
+        return; // Retorna se o nó for nulo
+    }
+    freeNo(r->rz, r->rz->folha); // Chama a função para liberar a memória do nó raiz
+    free(r);                     // Libera a memória da árvore
 }
 
 int main()
@@ -193,18 +241,23 @@ int main()
         printf("Arquivo aberto com sucesso. \n");
     }
 
+    arv *arvore = createArvore(degree); // Cria uma nova árvore B+ com o grau definido
+
     while ((ch = fgetc(fp)) != EOF) // Le os caracteres do arquivo até o final
     {
         if (ch >= '0' && ch <= '9') // Verifica se o caractere é um digito
         {
             num = num * 10 + (ch - '0'); // Converte o caractere para inteiro
         }
-        else if (ch == ';'){
-            insereArvore(createArvore(degree), num); // Insere o número na árvore B+
-            num = 0; // Reseta o número para o próximo dígito
+        else if (ch == ';')
+        {
+            insereArvore(arvore, num); // Insere o número na árvore B+
+            num = 0;                   // Reseta o número para o próximo dígito
         }
     }
     fclose(fp); // Fecha o arquivo
     printf("Dados inseridos na árvore B+ com sucesso.\n");
-    
+    printArvore(arvore->rz, 0); // Imprime a árvore B+
+    printf("\n");
+    freeArvore(arvore); // Libera a memória da árvore B+
 }
