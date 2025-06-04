@@ -192,9 +192,6 @@ void printArvore(no *r, int nl) // Função para imprimir a árvore B+
     {
         
     }
-    
-    
-    
 }
 
 void freeNo(no *r, bool f) // Função para liberar a memória de um nó
@@ -257,7 +254,7 @@ int main()
     }
     fclose(fp); // Fecha o arquivo
     printf("Dados inseridos na árvore B+ com sucesso.\n");
-    printArvore(arvore->rz, 0); // Imprime a árvore B+
+    // printArvore(arvore->rz, 0); // Imprime a árvore B+
     printf("\n");
     freeArvore(arvore); // Libera a memória da árvore B+
 }
