@@ -43,6 +43,7 @@ no *createNo(int t, bool f)
         exit(1); // Finaliza o programa se não conseguir alocar memória para os filhos
     }
     newNo->prox = NULL; // Inicializa o ponteiro para o proximo nó como NULL
+    newNo->n = 0;       // Inicializa o número de chaves no nó como 0
     return newNo;       // Retorna o novo nó criado
 }
 
@@ -180,17 +181,31 @@ void insereArvore(arv *A, int k) // Função para inserir um elemento na árvore
 void printArvore(no *r, int nl) // Função para imprimir a árvore B+
 {
     if (r == NULL)
-    {
-        return; // Retorna se o nó for nulo
-    }
+        return;
+
+    char prefixo[50] = ""; // String para armazenar os hífens
+
     for (int i = 0; i < nl; i++)
     {
-        printf("  "); // Imprime espaços para a indentação
+        strcat(prefixo, "-");
     }
-    printf("|"); // Imprime o separador de nível
-    for (int i = 0; i < r -> n; i++)
+
+    if (r->folha)
     {
-        
+        for (int i = 0; i < r->n; i++)
+        {
+            printf("%s%d\n", prefixo, r->chave[i]);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < r->n; i++)
+        {
+            printArvore(r->filho[i], nl + 1);
+            printf("%s%d\n", prefixo, r->chave[i]);
+        }
+        // Último filho
+        printArvore(r->filho[r->n], nl + 1);
     }
 }
 
@@ -252,9 +267,14 @@ int main()
             num = 0;                   // Reseta o número para o próximo dígito
         }
     }
+    if (num != 0) // Verifica se o último número foi lido
+    {
+        insereArvore(arvore, num); // Insere o último número na árvore B+
+    }
+
     fclose(fp); // Fecha o arquivo
     printf("Dados inseridos na árvore B+ com sucesso.\n");
-    // printArvore(arvore->rz, 0); // Imprime a árvore B+
+    printArvore(arvore->rz, 0); // Imprime a árvore B+
     printf("\n");
     freeArvore(arvore); // Libera a memória da árvore B+
 }
