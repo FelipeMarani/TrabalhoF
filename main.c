@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define degree 4 // Definindo o grau da árvore B+
+#define degree 2 // Definindo o grau da árvore B+
 
 typedef struct no // Definição da estrutura de um nó
 {
@@ -67,26 +67,38 @@ arv *createArvore(int g) // Função para criar uma nova árvore B+
 }
 
 void divFilho(arv *A, no *pai, int idx, no *folha)
-{                                // Função para dividir a folha
-    int t = A->t;                // Obtém o grau mínimo da árvore
-    no *new = createNo(t, true); // Cria um novo nó para a divisão
-    for (int j = 0; j < t; j++)
+{
+    int t = A->t;
+    no *new = createNo(t, true); // Cria o novo nó folha
+
+    new->n = t - 1; // O novo nó (da direita) receberá t-1 chaves
+
+    for (int j = 0; j < t - 1; j++) // Copia as últimas t-1 chaves do nó cheio para o novo nó
     {
-        new->chave[j] = folha->chave[j + t]; // Copia as chaves da folha para o novo nó
+        new->chave[j] = folha->chave[j + t];
     }
-    folha->n = t;            // Atualiza o número de chaves na folha
-    new->n = t;              // Atualiza o número de chaves no novo nó
-    new->prox = folha->prox; // Atualiza o ponteiro para o pŕoximo nó
-    folha->prox = new;       // Atualiza o ponteiro da folha para o novo nó
-    int sep = new->chave[0]; // Obtém a chave de separação
-    for (int j = pai->n; j > idx; j--)
+
+    folha->n = t; // O nó antigo (da esquerda) ficará com t chaves
+
+    new->prox = folha->prox; // Ajusta os ponteiros da lista ligada de folhas
+    folha->prox = new;
+
+    for (int j = pai->n; j >= idx + 1; j--) // Prepara para inserir a nova chave de separação no pai
     {
-        pai->filho[j + 1] = pai->filho[j]; // Move os filhos para a direita
-        pai->chave[j] = pai->chave[j - 1]; // Move as chaves para a direita
+        pai->filho[j + 1] = pai->filho[j];
     }
-    pai->filho[idx + 1] = new; // Define o novo nó como filho do pai
-    pai->chave[idx] = sep;     // Define a chave de separação no pai
-    pai->n++;                  // Incrementa o número de chaves no pai
+
+    pai->filho[idx + 1] = new;
+
+    for (int j = pai->n - 1; j >= idx; j--)
+    {
+        pai->chave[j + 1] = pai->chave[j];
+    }
+
+    // A chave de separação é a primeira chave do novo nó folha
+    pai->chave[idx] = new->chave[0]; // Move as chaves do pai para a direita para abrir espaço
+
+    pai->n++; // Incrementa o contador de chaves no pai
 }
 
 void divInterna(arv *A, no *pai, int idx, no *intr) // Função para realizar a divisão interna
@@ -134,7 +146,7 @@ void insereNotFull(arv *A, no *r, int k) // Função para inserir um elemento em
             i--; // Decrementa o índice
         }
         i++; // Incrementa o índice para a posição correta
-        if (r->filho[i]->n == 2 * A->t)
+        if (r->filho[i]->n == 2 * A->t - 1)
         {
             if (r->filho[i]->folha) // Verifica se o filho é uma folha
             {
@@ -155,8 +167,8 @@ void insereNotFull(arv *A, no *r, int k) // Função para inserir um elemento em
 
 void insereArvore(arv *A, int k) // Função para inserir um elemento na árvore B+
 {
-    no *r = A->rz;        // Obtém a raiz da árvore
-    if (r->n == 2 * A->t) // Verifica se a raiz está cheia
+    no *r = A->rz;            // Obtém a raiz da árvore
+    if (r->n == 2 * A->t - 1) // Verifica se a raiz está cheia
     {
         no *new = createNo(A->t, false); // Cria um novo nó interno
         A->rz = new;                     // Define o novo nó como a nova raiz
@@ -180,32 +192,56 @@ void insereArvore(arv *A, int k) // Função para inserir um elemento na árvore
 
 void printArvore(no *r, int nl) // Função para imprimir a árvore B+
 {
-    if (r == NULL)
+    
+    if (r == NULL)// Se o nó é nulo, não há nada a fazer.
+    {
         return;
-
-    char prefixo[50] = ""; // String para armazenar os hífens
-
-    for (int i = 0; i < nl; i++)
-    {
-        strcat(prefixo, "-");
     }
 
-    if (r->folha)
+    
+    if (r->folha) // Se for um nó folha, imprime suas chaves com o prefixo de folha.
+    {
+        
+        for (int i = 0; i < nl; i++) // Imprime a indentação com espaços, baseada no nível.
+        {
+            printf("  "); // Adiciona dois espaços para cada nível de profundidade
+        }
+
+        
+        printf("|-- "); // Imprime o prefixo de nó folha e as chaves.
+        for (int i = 0; i < r->n; i++)
+        {
+            printf("%d ", r->chave[i]);
+        }
+        printf("\n");
+    }
+    else // Se for um nó interno, faz o percurso em ordem.
     {
         for (int i = 0; i < r->n; i++)
         {
-            printf("%s%d\n", prefixo, r->chave[i]);
+           
+            printArvore(r->filho[i], nl + 1);  // Chamada recursiva para o filho à esquerda da chave.
+
+            
+            
+            for (int j = 0; j < nl; j++) // Imprime a indentação com espaços.
+            {
+                printf("  ");
+            }
+
+           
+            if (nl > 0)  // Imprime o prefixo de nó interno ou raiz.
+            {
+                printf("|-"); // Para nós internos.
+            }
+            else
+            {
+                printf("| "); // Para a chave da raiz.
+            }
+            printf("%d\n", r->chave[i]);
         }
-    }
-    else
-    {
-        for (int i = 0; i < r->n; i++)
-        {
-            printArvore(r->filho[i], nl + 1);
-            printf("%s%d\n", prefixo, r->chave[i]);
-        }
-        // Último filho
-        printArvore(r->filho[r->n], nl + 1);
+        
+        printArvore(r->filho[r->n], nl + 1); // Chamada recursiva para o último filho.
     }
 }
 
